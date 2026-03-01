@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{85ECAA4D-3433-4C20-A466-154775EDDC11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aco228.Common", "..\..\..\Aco228.Common\src\Aco228.Common\Aco228.Common.csproj", "{718DA3EB-5795-4BA5-A508-8EDDBA6AE428}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aco228.WService", "..\..\..\Aco228.WService\src\Aco228.WService\Aco228.WService\Aco228.WService.csproj", "{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aco228.MongoDb", "..\..\..\Aco228.v2.MongoDb\src\Aco228.v2.MongoDb\Aco228.MongoDb\Aco228.MongoDb.csproj", "{A64B5113-5C32-4906-98F0-EA302B66D23D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aco228.FacebookAdLibrary.Consoler", "Aco228.FacebookAdLibrary.Consoler\Aco228.FacebookAdLibrary.Consoler.csproj", "{8B28CE10-D8E4-4BA0-AA8D-70096CE62488}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aco228.FacebookAdLibrary", "Aco228.FacebookAdLibrary\Aco228.FacebookAdLibrary.csproj", "{0859D979-C333-46EE-A93F-875977903277}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{718DA3EB-5795-4BA5-A508-8EDDBA6AE428} = {85ECAA4D-3433-4C20-A466-154775EDDC11}
+		{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2} = {85ECAA4D-3433-4C20-A466-154775EDDC11}
+		{A64B5113-5C32-4906-98F0-EA302B66D23D} = {85ECAA4D-3433-4C20-A466-154775EDDC11}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{718DA3EB-5795-4BA5-A508-8EDDBA6AE428}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{718DA3EB-5795-4BA5-A508-8EDDBA6AE428}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{718DA3EB-5795-4BA5-A508-8EDDBA6AE428}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{718DA3EB-5795-4BA5-A508-8EDDBA6AE428}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D2A37C1-A104-4DD0-BDD3-33B6ABB4FDD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A64B5113-5C32-4906-98F0-EA302B66D23D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A64B5113-5C32-4906-98F0-EA302B66D23D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A64B5113-5C32-4906-98F0-EA302B66D23D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A64B5113-5C32-4906-98F0-EA302B66D23D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B28CE10-D8E4-4BA0-AA8D-70096CE62488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B28CE10-D8E4-4BA0-AA8D-70096CE62488}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B28CE10-D8E4-4BA0-AA8D-70096CE62488}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B28CE10-D8E4-4BA0-AA8D-70096CE62488}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0859D979-C333-46EE-A93F-875977903277}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0859D979-C333-46EE-A93F-875977903277}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0859D979-C333-46EE-A93F-875977903277}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0859D979-C333-46EE-A93F-875977903277}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
