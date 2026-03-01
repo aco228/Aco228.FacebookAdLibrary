@@ -1,8 +1,9 @@
-﻿using Aco228.MongoDb.Services;
+﻿using Aco228.Common.Models;
+using Aco228.MongoDb.Services;
 
 namespace Aco228.FacebookAdLibrary.Core;
 
-public interface IFacebookAdLibraryDbContext : IMongoDbContext
+public interface IFacebookAdLibraryDbContext : IMongoDbContext, ISingleton
 {
     
 }
