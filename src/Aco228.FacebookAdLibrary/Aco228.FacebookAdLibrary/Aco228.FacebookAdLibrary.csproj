@@ -17,6 +17,19 @@
       <ProjectReference Include="..\..\..\..\Aco228.GoogleServices\src\Aco228.GoogleServices\Aco228.GoogleServices.csproj" />
       <ProjectReference Include="..\..\..\..\Aco228.Runners\src\Aco228.Runners\Aco228.Runners.csproj" />
       <ProjectReference Include="..\..\..\..\Aco228.v2.MongoDb\src\Aco228.v2.MongoDb\Aco228.MongoDb\Aco228.MongoDb.csproj" />
+      <ProjectReference Include="..\..\..\..\Aco228.WebLLM\src\Aco228.WebLLM\Aco228.AIGen\Aco228.AIGen.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="Prompts\AnaliseCompetitors\examineCompetitors.v1.prompt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\ExamineCompetitors\examineCompetitors.v1.prompt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Prompts\RemoveDuplicates\fb.removeDuplicates.v1.prompt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -24,7 +24,7 @@ public class FbLibAdDocumentVariation
 {
     public string Caption { get; set; }
     public string CtaText { get; set; }
-    public string Title { get; set; }
+    public string? Title { get; set; }
     public string LinkUrl { get; set; }
     public string? Body { get; set; }
 
