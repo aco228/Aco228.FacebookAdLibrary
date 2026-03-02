@@ -67,7 +67,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
             
             Console.WriteLine($" >> Start search for page {requestPageId}");
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (await ProcessAdLibraryDataAsync(model) == false) 
                     break;
@@ -84,7 +84,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
             
             Console.WriteLine($" >> Start search for domain {domain}");
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (await ProcessAdLibraryDataAsync(model) == false) 
                     break;
@@ -122,17 +122,6 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         var json = JToken.Parse(text);
         try
         {
-            if (json["data"]["pages"] != null)
-            {
-                var jsonTxt = json["data"]["user"].ToString();
-                var page = JsonConvert.DeserializeObject<PageModel>(jsonTxt);
-                if (!_result.Pages.Any(x => x.id == page.id))
-                {
-                    _result.Pages.Add(page);
-                    Console.WriteLine($"Page {page.name} is extracted");
-                }
-            }
-
             if (json["data"]["ad_library_main"]?["search_results_connection"]?["edges"] != null)
             {
                 if (_fetchModelAds == null)
@@ -156,8 +145,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 
         foreach (var dataEntry in data)
         {
-            if(_result.LibraryAds.All(x => x.id != dataEntry.id))
-                _result.LibraryAds.Add(dataEntry);
+            _result.Add(dataEntry);
         }
                 
         Console.WriteLine("Found ad-library-main");

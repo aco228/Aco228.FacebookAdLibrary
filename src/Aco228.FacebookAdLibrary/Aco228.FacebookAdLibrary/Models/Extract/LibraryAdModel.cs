@@ -23,6 +23,26 @@ public class ImageDTO
     public string watermarked_resized_image_url { get; set; }
 }
 
+public class CardDto
+{
+    public string body { get; set; }
+    public string cta_type { get; set; }
+    public string caption { get; set; }
+    public string link_description { get; set; }
+    public string link_url { get; set; }
+    public string title { get; set; }
+    public string cta_text { get; set; }
+    public string video_hd_url { get; set; }
+    public string video_preview_image_url { get; set; }
+    public string video_sd_url { get; set; }
+    public object watermarked_video_hd_url { get; set; }
+    public object watermarked_video_sd_url { get; set; }
+    public List<object> image_crops { get; set; }
+    public string original_image_url { get; set; }
+    public string resized_image_url { get; set; }
+    public string watermarked_resized_image_url { get; set; }
+}
+
 public class SnapshotDTO
 {
     public object branded_content { get; set; }
@@ -38,8 +58,8 @@ public class SnapshotDTO
     public object Event { get; set; }
     public string caption { get; set; }
     public string cta_text { get; set; }
-    public List<object> cards { get; set; }
-    public BodyDTO body { get; set; }
+    public List<CardDto>? cards { get; set; }
+    public BodyDTO? body { get; set; }
     public string cta_type { get; set; }
     public string display_format { get; set; }
     public string link_description { get; set; }
@@ -105,9 +125,9 @@ public class CollatedResultDTO
     public object? reach_estimate { get; set; }
     public string? currency { get; set; }
     public object? spend { get; set; }
-    public int? end_date { get; set; }
+    public long? end_date { get; set; }
     public List<string>? publisher_platform { get; set; }
-    public int? start_date { get; set; }
+    public long? start_date { get; set; }
     public bool? contains_sensitive_content { get; set; }
     public object? total_active_time { get; set; }
     public RegionalRegulationDataDTO? regional_regulation_data { get; set; }

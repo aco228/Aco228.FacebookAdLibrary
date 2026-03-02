@@ -14,7 +14,6 @@ public interface IFacebookAdLibraryBrowser : ITransient, IAsyncDisposable
 public class FacebookAdLibraryBrowser : IFacebookAdLibraryBrowser
 {
     private IPlaywright _playwright;
-    private IBrowser _browser;
     public IPage Page { get; private set; }
     private IBrowserContext? _context;
     
@@ -69,8 +68,5 @@ public class FacebookAdLibraryBrowser : IFacebookAdLibraryBrowser
             await playwrightAsyncDisposable.DisposeAsync();
         else
             _playwright.Dispose();
-        await _browser.DisposeAsync();
-        
-        if (_context != null) await _context.DisposeAsync();
     }
 }
