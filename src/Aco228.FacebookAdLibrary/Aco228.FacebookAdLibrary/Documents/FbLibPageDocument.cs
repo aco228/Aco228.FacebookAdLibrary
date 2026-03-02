@@ -13,5 +13,5 @@ public class FbLibPageDocument : MongoDocument
     public string? Name { get; set; }
     public string? Byline { get; set; }
     public string? PageUrl { get; set; }
-    [BsonIgnore]public string? PageProfilePictureUrl { get; set; }
+    public string? PageProfilePictureUrl { get; set; }
 }
