@@ -8,6 +8,7 @@ using Aco228.FacebookAdLibrary.Services;
 using Aco228.GoogleServices.Extensions;
 using Aco228.MongoDb.Extensions;
 using Aco228.MongoDb.Extensions.RepoExtensions;
+using Aco228.MongoDb.Models;
 using Aco228.MongoDb.Services;
 using Aco228.Runners.Core.Tasks;
 using Aco228.Runners.Models.Timings;
@@ -27,7 +28,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
     protected override async Task InternalExecute()
     {
-        var allPages = await PageRepo.Track().ToListAsync();
+        var allPages = await PageRepo.Track().Full().ToListAsync();
         var allDomains = await DomainRepo.Track().ToListAsync();
         var allAds = await AdRepo.Track().ToListAsync();
         
@@ -45,7 +46,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
         var result = await FacebookAdExtractService.Collect(request);
         await FacebookAdExtractService.DisposeAsync();
-        ProcessAdLibrary(result, allAds, allPages);
+        ProcessAdLibrary(result, allAds, allDomains, allPages);
 
         var stateMachine = UploadResources(allPages, allAds);
         await stateMachine.Wait();
@@ -58,9 +59,13 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
     private TaskStateMachine UploadResources(List<FbLibPageDocument> allPages, List<FbLibAdDocument> allAds)
     {
         var stateMachine = new TaskStateMachine().SetLimit(20);
+        int resourceToDownload = 0;
+        
+        
         foreach (var page in allPages.Where(page => !string.IsNullOrEmpty(page.PageProfilePictureUrl) && !page.PageProfilePictureUrl.StartsWith("https://storage.googleapis.com/")))
             stateMachine.Schedule(async () =>
             {
+                resourceToDownload++;
                 var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(page.PageProfilePictureUrl);
                 page.PageProfilePictureUrl = file.GetUrl();
             });
@@ -74,6 +79,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                     var index = i;
                     stateMachine.Schedule(async () =>
                     {
+                        resourceToDownload++;
                         var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(adVariation.ImageUrls[index]);
                         adVariation.ImageUrls[index] = file.GetUrl();
                     });
@@ -85,16 +91,22 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                     var index = i;
                     stateMachine.Schedule(async () =>
                     {
+                        resourceToDownload++;
                         var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(adVariation.VideoUrls[index]);
                         adVariation.VideoUrls[index] = file.GetUrl();
                     });
                 }
         }
 
+        Console.WriteLine($"Total resource to download: {resourceToDownload}");
         return stateMachine;
     }
 
-    private void ProcessAdLibrary(ExtractResult result, List<FbLibAdDocument> allAds, List<FbLibPageDocument> allPages)
+    private void ProcessAdLibrary(
+        ExtractResult result, 
+        List<FbLibAdDocument> allAds,
+        List<FbLibDomainDocument> allDomains, 
+        List<FbLibPageDocument> allPages)
     {
         foreach (var libraryAd in result.LibraryAds)
         foreach (var libraryRes in libraryAd.node.collated_results)
@@ -124,6 +136,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
             var snapshot = libraryRes.snapshot;
 
+            page.LastRunUtc = DT.GetUnix();
             page.Name = libraryRes.page_name;
             page.Byline = libraryRes.snapshot.byline;
             page.PageUrl = libraryRes.snapshot.page_profile_uri;
@@ -132,7 +145,10 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 page.PageProfilePictureUrl = libraryRes.snapshot!.page_profile_picture_url;
 
             if (ad.Id != ObjectId.Empty)
+            {
+                UpdateDomainLastRunUtc(allDomains, ad);
                 continue;
+            }
 
             try
             {
@@ -160,15 +176,28 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                         CtaText = cardDto.cta_text,
                         Title = cardDto.title,
                         LinkUrl = cardDto.link_url,
+                        DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
                         Body = cardDto.title, 
                         ImageUrls = new(){ cardDto.original_image_url },
                         VideoUrls = new(){ cardDto.video_sd_url },
                     });
+
+            UpdateDomainLastRunUtc(allDomains, ad);
             
             ad.StartDate = libraryRes.start_date;
             ad.EndDate = libraryRes.end_date;
             ad.PublishPlatforms = libraryRes.publisher_platform;
             ad.Raw = JsonSerializer.Serialize(libraryRes);
+        }
+    }
+
+    private static void UpdateDomainLastRunUtc(List<FbLibDomainDocument> allDomains, FbLibAdDocument ad)
+    {
+        foreach (var adVariation in ad.Variations)
+        {
+            var domain = allDomains.FirstOrDefault(x => x.Domain == adVariation.DomainUrl);
+            if(domain != null)
+                domain.LastRunUtc = DT.GetUnix();
         }
     }
 }
