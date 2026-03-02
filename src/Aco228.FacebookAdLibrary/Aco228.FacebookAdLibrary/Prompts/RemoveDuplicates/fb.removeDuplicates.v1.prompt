@@ -4,7 +4,7 @@
 - Two descriptions are duplicates if they target the same subject/product/service
 - Minor differences in angle or framing do NOT make them unique if the core topic is the same
 - For each group of duplicates, keep the FIRST occurrence as the original
-- Prioritize the results you constructed based on multiple entries
+- Dont threat the descriptions as duplicates if they are on different languages
 - CRITICAL: Copy description text EXACTLY as given — do NOT paraphrase, summarize, or rephrase any description
 - If no duplicates exist, return an empty array []
 

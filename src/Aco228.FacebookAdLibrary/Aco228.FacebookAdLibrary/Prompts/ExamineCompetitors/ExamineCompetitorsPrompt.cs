@@ -35,7 +35,7 @@ public class ExamineCompetitorsPromptResponse
         "If only one country speaks that language, its okay to return just one or two countries.")]
     public List<string> CandidateCountryCodes { get; set; }
     
-    [PromptHint("1-2 sentence neutral description of what this ad is offering or communicating in english. Do not editorialize.")]
+    [PromptHint("1-2 sentence neutral description of what this ad is offering or communicating in english. Description must always be in english. Do not editorialize.")]
     public string Description { get; set; }
     
     [PromptHint("A clean, concise article/ad title you would assign to this offer (in original language, not necessarily copied from the original,)")]

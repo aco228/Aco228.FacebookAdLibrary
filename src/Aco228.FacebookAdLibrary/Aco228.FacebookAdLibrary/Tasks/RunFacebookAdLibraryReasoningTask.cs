@@ -56,7 +56,8 @@ public class RunFacebookAdLibraryReasoningTask : TaskBase
                 var duplicates = results.Where(x => duplicate.Duplicates.Contains(x.Description)).ToList();
                 if (duplicates.Any())
                 {
-                    original.AdIds.AddRange(duplicates.Select(x => x.AdIds).GetAllListsCombined());
+                    original.AdIds.AddRange(duplicates.Select(x => x.AdIds).GetAllListsCombined().Distinct());
+                    original.AdIds = original.AdIds.Distinct().ToList();
                     toDelete.AddRange(duplicates);
                 }
             }
@@ -65,7 +66,6 @@ public class RunFacebookAdLibraryReasoningTask : TaskBase
 
         await CompetitorsRepo.DeleteManyAsync(toDelete);
         await CompetitorsRepo.InsertOrUpdateManyAsync(results);
-        int a = 0;
     }
 
     private static async Task AiAnalyise(List<FbLibAdDocument> candidates, List<FbLibCompetitorDocument> results)
