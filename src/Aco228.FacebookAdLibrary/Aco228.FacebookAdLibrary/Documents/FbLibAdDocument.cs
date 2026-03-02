@@ -7,7 +7,8 @@ namespace Aco228.FacebookAdLibrary.Documents;
 [BsonCollection("Ads")]
 public class FbLibAdDocument : MongoDocument
 {
-    public string AdId { get; set; }
+    public required long PageId { get; set; }
+    public required string AdId { get; set; }
     public List<string> PublishPlatforms { get; set; }
     public long? StartDate { get; set; }
     public long? EndDate { get; set; }
@@ -27,5 +28,6 @@ public class FbLibAdDocumentVariation
     public string? Body { get; set; }
 
     public List<string> ImageUrls { get; set; } = new();
+    public List<string> VideoPreview { get; set; } = new();
     public List<string> VideoUrls { get; set; } = new();
 }

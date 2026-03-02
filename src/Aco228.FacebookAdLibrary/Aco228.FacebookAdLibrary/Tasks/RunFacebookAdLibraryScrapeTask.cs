@@ -60,15 +60,20 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
     {
         var stateMachine = new TaskStateMachine().SetLimit(20);
         int resourceToDownload = 0;
-        
-        
-        foreach (var page in allPages.Where(page => !string.IsNullOrEmpty(page.PageProfilePictureUrl) && !page.PageProfilePictureUrl.StartsWith("https://storage.googleapis.com/")))
+
+
+        foreach (var page in allPages.Where(page =>
+                     !string.IsNullOrEmpty(page.PageProfilePictureUrl) &&
+                     !page.PageProfilePictureUrl.StartsWith("https://storage.googleapis.com/")))
+        {
+            resourceToDownload++;
             stateMachine.Schedule(async () =>
             {
                 resourceToDownload++;
                 var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(page.PageProfilePictureUrl);
                 page.PageProfilePictureUrl = file.GetUrl();
             });
+        }
 
         foreach (var ad in allAds)
         foreach (var adVariation in ad.Variations)
@@ -77,11 +82,23 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 if(!adVariation.ImageUrls[i].StartsWith("https://storage.googleapis.com/"))
                 {
                     var index = i;
+                    resourceToDownload++;
                     stateMachine.Schedule(async () =>
                     {
-                        resourceToDownload++;
                         var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(adVariation.ImageUrls[index]);
                         adVariation.ImageUrls[index] = file.GetUrl();
+                    });
+                }
+            
+            for (int i = 0; i < adVariation.VideoPreview.Count; i++)
+                if(!adVariation.VideoPreview[i].StartsWith("https://storage.googleapis.com/"))
+                {
+                    var index = i;
+                    resourceToDownload++;
+                    stateMachine.Schedule(async () =>
+                    {
+                        var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(adVariation.VideoPreview[index]);
+                        adVariation.VideoPreview[index] = file.GetUrl();
                     });
                 }
 
@@ -89,9 +106,9 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 if(!adVariation.VideoUrls[i].StartsWith("https://storage.googleapis.com/"))
                 {
                     var index = i;
+                    resourceToDownload++;
                     stateMachine.Schedule(async () =>
                     {
-                        resourceToDownload++;
                         var file = await FacebookAdLibraryBucket.UploadFromUrlAsync(adVariation.VideoUrls[index]);
                         adVariation.VideoUrls[index] = file.GetUrl();
                     });
@@ -114,14 +131,6 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             if (libraryRes.snapshot == null)
                 continue;
             
-            var ad = allAds.FirstOrDefault(x => x.AdId == libraryRes.ad_archive_id);
-            if (ad == null)
-            {
-                ConsoleLog($"New.Ad == {libraryRes.ad_archive_id}");
-                ad = new() { AdId = libraryRes.ad_archive_id, };
-                allAds.Add(ad);
-            }
-            
             var page = allPages.FirstOrDefault(x => x.PageId.ToString() == libraryRes.page_id);
             if (page == null)
             {
@@ -133,9 +142,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 };
                 allPages.Add(page);
             }
-
-            var snapshot = libraryRes.snapshot;
-
+            
             page.LastRunUtc = DT.GetUnix();
             page.Name = libraryRes.page_name;
             page.Byline = libraryRes.snapshot.byline;
@@ -143,6 +150,16 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             
             if (string.IsNullOrEmpty(page.PageProfilePictureUrl))
                 page.PageProfilePictureUrl = libraryRes.snapshot!.page_profile_picture_url;
+            
+            var ad = allAds.FirstOrDefault(x => x.AdId == libraryRes.ad_archive_id);
+            if (ad == null)
+            {
+                ConsoleLog($"New.Ad == {libraryRes.ad_archive_id}");
+                ad = new() { AdId = libraryRes.ad_archive_id, PageId = page.PageId };
+                allAds.Add(ad);
+            }
+
+            var snapshot = libraryRes.snapshot;
 
             if (ad.Id != ObjectId.Empty)
             {
@@ -150,23 +167,18 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 continue;
             }
 
-            try
+            ad.Variations.Add(new()
             {
-                ad.Variations.Add(new()
-                {
-                    Caption = snapshot.caption,
-                    CtaText = snapshot.cta_text,
-                    Title = snapshot.title,
-                    LinkUrl = snapshot.link_url,
-                    DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
-                    Body = snapshot.body?.text,
-                    ImageUrls = snapshot.images?.Select(x => x.original_image_url).ToList() ?? new(),
-                });
-            }
-            catch
-            {
-                int a = 0;
-            }
+                Caption = snapshot.caption,
+                CtaText = snapshot.cta_text,
+                Title = snapshot.title,
+                LinkUrl = snapshot.link_url,
+                DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
+                Body = snapshot.body?.text,
+                ImageUrls = snapshot.images?.Select(x => x.original_image_url).ToList() ?? new(),
+                VideoPreview = snapshot.videos?.Select(x => x.video_preview_image_url).ToList() ?? new(),
+                VideoUrls = snapshot.videos?.Select(x => x.video_sd_url).ToList() ?? new(),
+            });
 
             if (snapshot.cards?.Count > 0)
                 foreach (var cardDto in snapshot.cards)
@@ -178,8 +190,9 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                         LinkUrl = cardDto.link_url,
                         DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
                         Body = cardDto.title, 
-                        ImageUrls = new(){ cardDto.original_image_url },
-                        VideoUrls = new(){ cardDto.video_sd_url },
+                        ImageUrls = string.IsNullOrEmpty(cardDto.original_image_url) ? new() :new(){ cardDto.original_image_url },
+                        VideoPreview = string.IsNullOrEmpty(cardDto.video_preview_image_url) ? new() : new(){ cardDto.video_preview_image_url },
+                        VideoUrls = string.IsNullOrEmpty(cardDto.video_sd_url) ? new() : new(){ cardDto.video_sd_url },
                     });
 
             UpdateDomainLastRunUtc(allDomains, ad);

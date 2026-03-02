@@ -23,6 +23,12 @@ public class ImageDTO
     public string watermarked_resized_image_url { get; set; }
 }
 
+public class VideoDTO
+{
+    public string video_preview_image_url { get; set; }
+    public string video_sd_url { get; set; }
+}
+
 public class CardDto
 {
     public string body { get; set; }
@@ -64,11 +70,11 @@ public class SnapshotDTO
     public string display_format { get; set; }
     public string link_description { get; set; }
     public string link_url { get; set; }
-    public List<ImageDTO> images { get; set; }
+    public List<ImageDTO>? images { get; set; }
     public List<string> page_categories { get; set; }
     public int page_like_count { get; set; }
     public string title { get; set; }
-    public List<object> videos { get; set; }
+    public List<VideoDTO>? videos { get; set; }
     public bool is_reshared { get; set; }
     public List<object> extra_links { get; set; }
     public List<object> extra_texts { get; set; }
