@@ -30,7 +30,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
     public async Task<ExtractResult> Collect(ScrapeRequest request)
     {
         const string pageId = "547168535157118";
-        string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&source=page-transparency-widget&view_all_page_id=" + pageId;
+        string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=relevancy_monthly_grouped&sort_data[direction]=desc&view_all_page_id=" + pageId;
 
         await _browser.Launch(openAsHeadless: false);
         _browser.Page.Response += async (_, response) => await OnPageResponse(response);

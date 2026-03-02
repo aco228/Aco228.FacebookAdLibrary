@@ -13,6 +13,7 @@ using Aco228.MongoDb.Services;
 using Aco228.Runners.Core.Tasks;
 using Aco228.Runners.Models.Timings;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Aco228.FacebookAdLibrary.Tasks;
 
@@ -30,16 +31,27 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
     {
         var allPages = await PageRepo.Track().Full().ToListAsync();
         var allDomains = await DomainRepo.Track().ToListAsync();
-        var allAds = await AdRepo.Track().ToListAsync();
         
         var pageCandidates = allPages.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(20);
-        var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(20);
-
+        var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(10);
+        
         var request = new ScrapeRequest()
         {
             PageIds = pageCandidates.Select(x => x.PageId).ToList(),
             Domains = domainCandidates.Select(x => x.Domain).ToList(),
         };
+
+        var adsFilters = new List<FilterDefinition<FbLibAdDocument>>();
+        adsFilters.Add(Builders<FbLibAdDocument>.Filter.Or(
+            Builders<FbLibAdDocument>.Filter.In(x => x.PageId, pageCandidates.Select(x => x.PageId)),
+            Builders<FbLibAdDocument>.Filter.In(x => x.DomainUrl, domainCandidates.Select(x => x.Domain))
+            ));
+        
+        var allAds = await AdRepo
+            .Track()
+            .Full()
+            .FilterBy(adsFilters)
+            .ToListAsync();
         
         if(!request.Any())
             return;
@@ -47,6 +59,12 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         var result = await FacebookAdExtractService.Collect(request);
         await FacebookAdExtractService.DisposeAsync();
         ProcessAdLibrary(result, allAds, allDomains, allPages);
+
+        foreach (var candidate in domainCandidates)
+            candidate.LastRunUtc = DT.GetUnix();
+        
+        foreach (var candidate in pageCandidates) 
+            candidate.LastRunUtc = DT.GetUnix();
 
         var stateMachine = UploadResources(allPages, allAds);
         await stateMachine.Wait();
@@ -142,8 +160,11 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 };
                 allPages.Add(page);
             }
+            else
+            {
+                page.LastRunUtc = DT.GetUnix();
+            }
             
-            page.LastRunUtc = DT.GetUnix();
             page.Name = libraryRes.page_name;
             page.Byline = libraryRes.snapshot.byline;
             page.PageUrl = libraryRes.snapshot.page_profile_uri;
@@ -161,6 +182,9 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
             var snapshot = libraryRes.snapshot;
 
+            ad.LastScanUtc = DT.GetUnix();
+            ad.DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First().Trim().ToLower() ?? "";
+            
             if (ad.Id != ObjectId.Empty)
             {
                 UpdateDomainLastRunUtc(allDomains, ad);
@@ -173,7 +197,6 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 CtaText = snapshot.cta_text,
                 Title = snapshot.title,
                 LinkUrl = snapshot.link_url,
-                DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
                 Body = snapshot.body?.text,
                 ImageUrls = snapshot.images?.Select(x => x.original_image_url).ToList() ?? new(),
                 VideoPreview = snapshot.videos?.Select(x => x.video_preview_image_url).ToList() ?? new(),
@@ -188,7 +211,6 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                         CtaText = cardDto.cta_text,
                         Title = cardDto.title,
                         LinkUrl = cardDto.link_url,
-                        DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First() ?? "",
                         Body = cardDto.title, 
                         ImageUrls = string.IsNullOrEmpty(cardDto.original_image_url) ? new() :new(){ cardDto.original_image_url },
                         VideoPreview = string.IsNullOrEmpty(cardDto.video_preview_image_url) ? new() : new(){ cardDto.video_preview_image_url },
@@ -206,11 +228,8 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
     private static void UpdateDomainLastRunUtc(List<FbLibDomainDocument> allDomains, FbLibAdDocument ad)
     {
-        foreach (var adVariation in ad.Variations)
-        {
-            var domain = allDomains.FirstOrDefault(x => x.Domain == adVariation.DomainUrl);
-            if(domain != null)
-                domain.LastRunUtc = DT.GetUnix();
-        }
+        var domain = allDomains.FirstOrDefault(x => x.Domain.Equals(ad.DomainUrl, StringComparison.InvariantCultureIgnoreCase));
+        if(domain != null)
+            domain.LastRunUtc = DT.GetUnix();
     }
 }

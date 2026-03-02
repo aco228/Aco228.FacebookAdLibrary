@@ -9,9 +9,11 @@ public class FbLibAdDocument : MongoDocument
 {
     public required long PageId { get; set; }
     public required string AdId { get; set; }
+    public long LastScanUtc { get; set; }
     public List<string> PublishPlatforms { get; set; }
     public long? StartDate { get; set; }
     public long? EndDate { get; set; }
+    public string DomainUrl { get; set; }
 
     public List<FbLibAdDocumentVariation> Variations { get; set; } = new();
     
@@ -24,7 +26,6 @@ public class FbLibAdDocumentVariation
     public string CtaText { get; set; }
     public string Title { get; set; }
     public string LinkUrl { get; set; }
-    public string DomainUrl { get; set; }
     public string? Body { get; set; }
 
     public List<string> ImageUrls { get; set; } = new();
