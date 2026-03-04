@@ -5,6 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace Aco228.FacebookAdLibrary.Documents;
 
 [BsonCollection("Pages")]
+[BsonIgnoreExtraElements]
 public class FbLibPageDocument : MongoDocument
 {
     public long PageId { get; set; }

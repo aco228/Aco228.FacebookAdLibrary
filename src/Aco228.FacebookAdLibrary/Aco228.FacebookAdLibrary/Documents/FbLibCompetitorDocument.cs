@@ -1,10 +1,12 @@
 ﻿using Aco228.MongoDb.Models;
 using Aco228.MongoDb.Models.Attributes;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Aco228.FacebookAdLibrary.Documents;
 
 [BsonCollection("Competitors")]
+[BsonIgnoreExtraElements]
 public class FbLibCompetitorDocument : MongoDocument
 {
     public string Vertical { get; set; }

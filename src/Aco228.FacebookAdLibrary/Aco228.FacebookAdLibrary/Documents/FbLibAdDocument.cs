@@ -5,6 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace Aco228.FacebookAdLibrary.Documents;
 
 [BsonCollection("Ads")]
+[BsonIgnoreExtraElements]
 public class FbLibAdDocument : MongoDocument
 {
     public required long PageId { get; set; }
@@ -20,6 +21,7 @@ public class FbLibAdDocument : MongoDocument
     public string Raw { get; set; }
 }
 
+[BsonIgnoreExtraElements]
 public class FbLibAdDocumentVariation
 {
     public string Caption { get; set; }
