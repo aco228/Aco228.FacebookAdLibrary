@@ -19,6 +19,9 @@ namespace Aco228.FacebookAdLibrary.Tasks;
 
 public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
+    private const int MAXIMUM_PAGES_PER_TURN = 40;
+    private const int MAXIMUM_DOMAINS_PER_TURN = 25;
+    
     [InjectService] public IFacebookAdExtractService FacebookAdExtractService { get; set; } 
     [InjectService] public IFacebookAdLibraryBucket FacebookAdLibraryBucket { get; set; } 
     [InjectService] public IMongoRepo<FbLibPageDocument> PageRepo { get; set; } 
@@ -32,8 +35,8 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         var allPages = await PageRepo.Track().Full().ToListAsync();
         var allDomains = await DomainRepo.Track().ToListAsync();
         
-        var pageCandidates = allPages.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(20);
-        var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(10);
+        var pageCandidates = allPages.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(MAXIMUM_PAGES_PER_TURN);
+        var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(MAXIMUM_DOMAINS_PER_TURN);
         
         var request = new ScrapeRequest()
         {
