@@ -1,7 +1,8 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
+using Aco228.Common.Extensions;
 using Aco228.Common.Models;
 using Aco228.FacebookAdLibrary.Browser;
-using Aco228.FacebookAdLibrary.Core;
 using Aco228.FacebookAdLibrary.Models;
 using Aco228.FacebookAdLibrary.Models.Extract;
 using Microsoft.Playwright;
@@ -19,7 +20,9 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 {
     private readonly IFacebookAdLibraryBrowser _browser;
     private ExtractResult _result = new();
+    public HashSet<string> AdIds { get; set; } = new();
     private FetchModel? _fetchModelAds = null;
+    private FetchModel? _fetchModelAdDetails = null;
 
     public FacebookAdExtractService(IFacebookAdLibraryBrowser browser)
     {
@@ -30,7 +33,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
     public async Task<ExtractResult> Collect(ScrapeRequest request)
     {
         const string pageId = "547168535157118";
-        string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=relevancy_monthly_grouped&sort_data[direction]=desc&view_all_page_id=" + pageId;
+        string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&view_all_page_id=" + pageId;
 
         await _browser.Launch(openAsHeadless: false);
         _browser.Page.Response += async (_, response) => await OnPageResponse(response);
@@ -53,9 +56,25 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                 
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
+
+        var elements = _browser.Page.GetByText("See ad details");
+        var element = elements.Nth(1);
+        await element.WaitForAsync();
+        await element.ClickAsync();
+        
+        for (;;)
+        {
+            if (_fetchModelAdDetails != null)
+                break;
+            
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
         
         var variables = _fetchModelAds.GetPostData()["variables"];
         var model = JsonConvert.DeserializeObject<FacebookSearchVariable>(WebUtility.UrlDecode(variables));
+        
+        var adDetailVariable = _fetchModelAdDetails.GetPostData()["variables"];
+        var adDetailsModel = JsonConvert.DeserializeObject<FacebookAdDetailVariable>(WebUtility.UrlDecode(adDetailVariable));
 
         Console.WriteLine($"<<<< Searching for pages");
         foreach (var requestPageId in request.PageIds)
@@ -72,6 +91,12 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                 if (await ProcessAdLibraryDataAsync(model) == false) 
                     break;
             }
+            
+            Console.WriteLine(">>>> Searching for ad details");
+            foreach (var adId in AdIds)
+                await ProcessAdDetail(adId, adDetailsModel);
+            
+            AdIds.Clear();
         }
 
         Console.WriteLine($"<<<< Searching for domains");
@@ -89,9 +114,56 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                 if (await ProcessAdLibraryDataAsync(model) == false) 
                     break;
             }
+            
+            Console.WriteLine(">>>> Searching for ad details");
+            foreach (var adId in AdIds)
+                await ProcessAdDetail(adId, adDetailsModel);
+            
+            AdIds.Clear();
         }
 
         return _result;
+    }
+
+    private async Task ProcessAdDetail(string adId, FacebookAdDetailVariable variable)
+    {
+        if(!_result.AdPageMap.TryGetValue(adId, out var pageId))
+            return;
+        
+        variable.adArchiveID = adId;
+        variable.pageID = pageId;
+        
+        _fetchModelAdDetails.ReplacePostData("variables", JsonConvert.SerializeObject(variable));
+        var js = _fetchModelAdDetails.SaveAsFetch();
+        var text = await _browser.Page.EvaluateAsync<string>(js);
+        if (text.StartsWith("{\"errors\":"))
+            return;
+
+        var json = JToken.Parse(text);
+        var jsonTxt = json["data"]["ad_library_main"]?["ad_details"]?.ToString();
+        
+        try
+        {
+            var data = JsonConvert.DeserializeObject<AdDetailsDTO>(jsonTxt);
+            if (data.transparency_by_location == null)
+                return;
+
+            if (data.transparency_by_location.uk_transparency != null)
+                _result.AddCountryForAd(adId, "GB");
+
+            if (data.transparency_by_location.br_transparency != null)
+                _result.AddCountryForAd(adId, "BR");
+
+            if (data.transparency_by_location.eu_transparency != null)
+            {
+                foreach (var countryBreakdown in data.transparency_by_location.eu_transparency.age_country_gender_reach_breakdown)
+                    _result.AddCountryForAd(adId, countryBreakdown.country.ToUpper());
+            }
+        }
+        catch(Exception ex)
+        {
+            return;
+        }
     }
 
     private async Task<bool> ProcessAdLibraryDataAsync(FacebookSearchVariable model)
@@ -122,14 +194,21 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         var json = JToken.Parse(text);
         try
         {
-            if (json["data"]["ad_library_main"]?["search_results_connection"]?["edges"] != null)
+            if (_fetchModelAds == null)
             {
-                if (_fetchModelAds == null)
+                if (json["data"]["ad_library_main"]?["search_results_connection"]?["edges"] != null)
                 {
                     _fetchModelAds = new FetchModel(response.Request);
                 }
             }
-            
+
+            if (_fetchModelAdDetails == null)
+            {
+                if (json["data"]["ad_library_main"]?["ad_details"] != null)
+                {
+                    _fetchModelAdDetails = new FetchModel(response.Request);
+                }
+            }
         }
         catch
         {
@@ -145,6 +224,26 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 
         foreach (var dataEntry in data)
         {
+            string? id = null;
+            foreach (var collatedResult in dataEntry.node.collated_results)
+            {
+                if(collatedResult.start_date == null)
+                    continue;
+                
+                var startDate = collatedResult.start_date.Value.ToDateTimeSecondsUtc();
+                if(startDate.GetDaysDifference() < 10)
+                    continue;
+                
+                id = collatedResult.ad_archive_id;
+                if(!string.IsNullOrEmpty(collatedResult.page_id))
+                    _result.AdPageMap.AddOrUpdate(id, collatedResult.page_id);
+            }
+
+            if (string.IsNullOrEmpty(id))
+                continue;
+            
+            
+            AdIds.Add(id);
             _result.Add(dataEntry);
         }
                 
@@ -159,19 +258,6 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 
     private async Task ImplOnRequest(IRoute route)
     {
-        // if (!route.Request.Url.Equals("https://www.facebook.com/api/graphql/"))
-        // {
-        //     await route.ContinueAsync();
-        //     return;
-        // }
-        //
-        // var postData = route.Request.PostData;
-        // if (postData.Contains("&fb_api_req_friendly_name=PolarisStoriesV3SeenMutation"))
-        // {
-        //     await route.AbortAsync();
-        //     return;
-        // }
-        
         await route.ContinueAsync();
     }
 

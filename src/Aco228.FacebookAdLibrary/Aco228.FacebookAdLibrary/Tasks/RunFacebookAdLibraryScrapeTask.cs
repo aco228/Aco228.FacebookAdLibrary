@@ -19,8 +19,8 @@ namespace Aco228.FacebookAdLibrary.Tasks;
 
 public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
-    private const int MAXIMUM_PAGES_PER_TURN = 40;
-    private const int MAXIMUM_DOMAINS_PER_TURN = 25;
+    private const int MAXIMUM_PAGES_PER_TURN = 10;
+    private const int MAXIMUM_DOMAINS_PER_TURN = 10;
     private const int MINIMUM_DAYS = 10;
     
     [InjectService] public IFacebookAdExtractService FacebookAdExtractService { get; set; } 
@@ -193,7 +193,11 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
             var snapshot = libraryRes.snapshot;
 
+            result.AdCountries.TryGetValue(libraryRes.ad_archive_id, out var countries);
+
+            ad.Countries = countries ?? new();
             ad.LastScanUtc = DT.GetUnix();
+            ad.SearchBy = $"{snapshot.title} {snapshot.caption} {snapshot.body?.text}";
             ad.DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First().Trim().ToLower() ?? "";
             
             if (ad.Id != ObjectId.Empty)

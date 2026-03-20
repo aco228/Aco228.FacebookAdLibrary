@@ -1,4 +1,5 @@
-﻿using Aco228.Common.Models;
+﻿using System.Collections.Concurrent;
+using Aco228.Common.Models;
 using Aco228.FacebookAdLibrary.Models.Extract;
 
 namespace Aco228.FacebookAdLibrary.Models;
@@ -6,7 +7,9 @@ namespace Aco228.FacebookAdLibrary.Models;
 public class ExtractResult
 {
     public ConcurrentList<LibraryAdModel> LibraryAds { get; set; } = new();
+    public ConcurrentDictionary<string, string> AdPageMap { get; set; } = new();
     public HashSet<string> InsertedIds { get; set; } = new();
+    public ConcurrentDictionary<string, HashSet<string>> AdCountries { get; set; } = new();
 
     public void Add(LibraryAdModel ad)
     {
@@ -15,5 +18,13 @@ public class ExtractResult
         
         LibraryAds.Add(ad);
         InsertedIds.Add(ad.id);
+    }
+
+    public void AddCountryForAd(string adId, string countryCode)
+    {
+        if (!AdCountries.ContainsKey(adId))
+            AdCountries.TryAdd(adId, new());
+        
+        AdCountries[adId].Add(countryCode);
     }
 }

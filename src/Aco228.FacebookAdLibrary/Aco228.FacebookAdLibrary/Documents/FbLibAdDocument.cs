@@ -11,7 +11,9 @@ public class FbLibAdDocument : MongoDocument
     public required long PageId { get; set; }
     public required string AdId { get; set; }
     public long LastScanUtc { get; set; }
+    public HashSet<string> Countries { get; set; } = new();
     public List<string> PublishPlatforms { get; set; }
+    public string SearchBy { get; set; } = "";
     public long? StartDate { get; set; }
     public long? EndDate { get; set; }
     public string DomainUrl { get; set; }
