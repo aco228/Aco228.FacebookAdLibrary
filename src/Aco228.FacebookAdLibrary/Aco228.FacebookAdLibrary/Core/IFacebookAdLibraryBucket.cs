@@ -10,7 +10,7 @@ public interface IFacebookAdLibraryBucket : IGoogleBucket, ITransient
 
 public class FacebookAdLibraryBucket : GoogleBucket, IFacebookAdLibraryBucket
 {
-    public override string BucketName => "arbo-facebook-ad-library";
+    public override string BucketName => "arbo-facebook-ad-library1";
     public FacebookAdLibraryBucket(IGoogleClientProvider googleClientProvider) : base(googleClientProvider)
     {
     }

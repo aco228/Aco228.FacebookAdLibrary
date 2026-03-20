@@ -21,6 +21,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
     private const int MAXIMUM_PAGES_PER_TURN = 40;
     private const int MAXIMUM_DOMAINS_PER_TURN = 25;
+    private const int MINIMUM_DAYS = 10;
     
     [InjectService] public IFacebookAdExtractService FacebookAdExtractService { get; set; } 
     [InjectService] public IFacebookAdLibraryBucket FacebookAdLibraryBucket { get; set; } 
@@ -150,6 +151,13 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         foreach (var libraryRes in libraryAd.node.collated_results)
         {
             if (libraryRes.snapshot == null)
+                continue;
+
+            if (libraryRes.start_date == null)
+                continue;
+
+            var startDate = libraryRes.start_date.Value.ToDateTimeSecondsUtc();
+            if(startDate.GetDaysDifference() < MINIMUM_DAYS)
                 continue;
             
             var page = allPages.FirstOrDefault(x => x.PageId.ToString() == libraryRes.page_id);
