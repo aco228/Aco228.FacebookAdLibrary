@@ -29,20 +29,37 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         _browser = browser;
     }
 
-
     public async Task<ExtractResult> Collect(ScrapeRequest request)
+    {
+        await _browser.Launch(openAsHeadless: false);
+        _browser.Page.Response += async (_, response) => await OnPageResponse(response);
+
+        try
+        {
+            await Execute(request);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            await _browser.DisposeAsync();   
+        }
+
+        return _result;
+    }
+
+    public async Task<ExtractResult> Execute(ScrapeRequest request)
     {
         const string pageId = "547168535157118";
         string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&view_all_page_id=" + pageId;
-
-        await _browser.Launch(openAsHeadless: false);
-        _browser.Page.Response += async (_, response) => await OnPageResponse(response);
         _browser.Page.RouteAsync("**/*", ImplOnRequest).ConfigureAwait(true);
         await _browser.Page.GotoAsync(url, new()
         {
             WaitUntil = WaitUntilState.Load,
         });
-
+        
         await Task.Delay(TimeSpan.FromSeconds(5));
         
         for (;;)
