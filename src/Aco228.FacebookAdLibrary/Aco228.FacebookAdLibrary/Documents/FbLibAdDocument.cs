@@ -1,4 +1,5 @@
-﻿using Aco228.MongoDb.Models;
+﻿using Aco228.Common.Extensions;
+using Aco228.MongoDb.Models;
 using Aco228.MongoDb.Models.Attributes;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -21,6 +22,8 @@ public class FbLibAdDocument : MongoDocument
     public List<FbLibAdDocumentVariation> Variations { get; set; } = new();
     
     public string Raw { get; set; }
+    
+    public DateTime? GetStartDate() => StartDate?.ToDateTimeSecondsUtc();
 }
 
 [BsonIgnoreExtraElements]

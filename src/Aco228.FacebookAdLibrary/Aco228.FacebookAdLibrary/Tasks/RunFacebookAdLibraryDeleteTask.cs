@@ -34,27 +34,45 @@ public class RunFacebookAdLibraryDeleteTask : TaskBase
         var ads = await AdRepo.Track().Full().Lt(x => x.LastScanUtc, lastScanUtc).OrderByPropertyDesc(x => x.LastScanUtc).Limit(MAXIMUM_PER_TURN).ToListAsync();
         foreach (var ad in ads)
         {
-            foreach (var variation in ad.Variations)
-            {
-                //https://storage.googleapis.com/arbo-facebook-ad-library1/649650318_1550561902689482_3359284673420269233_n.jpg
-                foreach (var url in variation.ImageUrls)
-                {
-                    var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
-                    await FacebookAdLibraryBucket.DeleteFileByName(fileName);
-                }
-                foreach (var url in variation.VideoPreview)
-                {
-                    var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
-                    await FacebookAdLibraryBucket.DeleteFileByName(fileName);
-                }
-                foreach (var url in variation.VideoUrls)
-                {
-                    var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
-                    await FacebookAdLibraryBucket.DeleteFileByName(fileName);
-                }
-            }
+            await DeleteAd(ad);
         }
 
         await AdRepo.DeleteManyAsync(ads);
+    }
+
+    public async Task DeleteBadAds()
+    {
+        var ads = await AdRepo.Track().Full().ToListAsync();
+        var maximumDays = 4 * 31;
+        var badAds = ads.Where(x => x.GetStartDate().GetDaysDifference() > maximumDays).ToList();
+        foreach (var ad in badAds)
+        {
+            await DeleteAd(ad);
+        }
+
+        await AdRepo.DeleteManyAsync(badAds);
+    }
+
+    private async Task DeleteAd(FbLibAdDocument ad)
+    {
+        foreach (var variation in ad.Variations)
+        {
+            //https://storage.googleapis.com/arbo-facebook-ad-library1/649650318_1550561902689482_3359284673420269233_n.jpg
+            foreach (var url in variation.ImageUrls)
+            {
+                var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
+                await FacebookAdLibraryBucket.DeleteFileByName(fileName);
+            }
+            foreach (var url in variation.VideoPreview)
+            {
+                var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
+                await FacebookAdLibraryBucket.DeleteFileByName(fileName);
+            }
+            foreach (var url in variation.VideoUrls)
+            {
+                var fileName = url.Remove("https://storage.googleapis.com/").Remove(FacebookAdLibraryBucket.BucketName + "/");
+                await FacebookAdLibraryBucket.DeleteFileByName(fileName);
+            }
+        }
     }
 }
