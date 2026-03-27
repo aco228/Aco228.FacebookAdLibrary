@@ -5,7 +5,7 @@ public class AdDetailsDTO
 {
     public AaaInfoDTO aaa_info { get; set; }
     public List<object> violation_types { get; set; }
-    public object verified_voice_context { get; set; }
+    public VerifyVoiceContextDTO? verified_voice_context { get; set; }
     public TransparencyByLocationDTO transparency_by_location { get; set; }
     public bool is_siep_advertiser_eligible_for_ai_disclosure { get; set; }
     public bool is_violating_eu_siep { get; set; }
@@ -79,6 +79,29 @@ public class AgeAudienceDTO
 public class AgeCountryGenderReachBreakdownDTO
 {
     public string country { get; set; }
+    public List<AgeCountryGenderReachBreakdownCDTO>? age_gender_breakdowns { get; set; }
+
+    public int TotalReach
+    {
+        get
+        {
+            if (age_gender_breakdowns == null)
+                return 0;
+
+            var male = age_gender_breakdowns?.Where(x => x.male != null).Sum(x => x.male.Value) ?? 0;
+            var female = age_gender_breakdowns?.Where(x => x.female != null).Sum(x => x.female.Value) ?? 0;
+            var unknown = age_gender_breakdowns?.Where(x => x.unknown != null).Sum(x => x.unknown.Value) ?? 0;
+            return male + female + unknown;
+        }
+    }
+}
+
+public class AgeCountryGenderReachBreakdownCDTO
+{
+    public string age_range { get; set; }
+    public int? male { get; set; }
+    public int? female { get; set; }
+    public int? unknown { get; set; }
 }
 
 public class EuTransparencyDTO
@@ -93,9 +116,9 @@ public class EuTransparencyDTO
 
 public class TransparencyByLocationDTO
 {
-    public object br_transparency { get; set; }
-    public EuTransparencyDTO eu_transparency { get; set; }
-    public object uk_transparency { get; set; }
+    public object? br_transparency { get; set; }
+    public EuTransparencyDTO? eu_transparency { get; set; }
+    public object? uk_transparency { get; set; }
 }
 
 

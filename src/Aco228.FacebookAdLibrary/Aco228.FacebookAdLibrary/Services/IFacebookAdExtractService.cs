@@ -173,7 +173,18 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 
             if (data.transparency_by_location.eu_transparency != null)
             {
-                foreach (var countryBreakdown in data.transparency_by_location.eu_transparency.age_country_gender_reach_breakdown)
+                var countryCandidates = data
+                    .transparency_by_location.eu_transparency
+                    .age_country_gender_reach_breakdown
+                    .OrderByDescending(x => x.TotalReach)
+                    .Where(x => x.TotalReach > 200)
+                    .Take(5)
+                    .ToList();
+                
+                if(!countryCandidates.Any())
+                    _result.AddErrorForAd(adId);
+                    
+                foreach (var countryBreakdown in countryCandidates)
                     _result.AddCountryForAd(adId, countryBreakdown.country.ToUpper());
             }
         }

@@ -10,9 +10,9 @@ public class FbLibPageDocument : MongoDocument
 {
     public long PageId { get; set; }
     public long? LastRunUtc { get; set; }
+    public bool IsIgnored { get; set; } = false;
     
     public string? Name { get; set; }
     public string? Byline { get; set; }
-    public string? PageUrl { get; set; }
     public string? PageProfilePictureUrl { get; set; }
 }

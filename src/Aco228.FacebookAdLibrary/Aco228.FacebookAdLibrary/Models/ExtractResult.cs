@@ -10,6 +10,7 @@ public class ExtractResult
     public ConcurrentDictionary<string, string> AdPageMap { get; set; } = new();
     public HashSet<string> InsertedIds { get; set; } = new();
     public ConcurrentDictionary<string, HashSet<string>> AdCountries { get; set; } = new();
+    public ConcurrentList<string> AdErrors { get; set; } = new();
 
     public void Add(LibraryAdModel ad)
     {
@@ -18,6 +19,11 @@ public class ExtractResult
         
         LibraryAds.Add(ad);
         InsertedIds.Add(ad.id);
+    }
+
+    public void AddErrorForAd(string adId)
+    {
+        AdErrors.Add(adId);
     }
 
     public void AddCountryForAd(string adId, string countryCode)

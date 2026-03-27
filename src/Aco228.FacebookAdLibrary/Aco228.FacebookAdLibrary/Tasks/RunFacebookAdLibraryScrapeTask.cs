@@ -36,7 +36,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         var allPages = await PageRepo.Track().Full().ToListAsync();
         var allDomains = await DomainRepo.Track().ToListAsync();
         
-        var pageCandidates = allPages.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(MAXIMUM_PAGES_PER_TURN);
+        var pageCandidates = allPages.Where(x => x.IsIgnored == false && (x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5)).Shuffle().Take(MAXIMUM_PAGES_PER_TURN);
         var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(MAXIMUM_DOMAINS_PER_TURN);
         
         var request = new ScrapeRequest()
@@ -156,6 +156,9 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             if (libraryRes.start_date == null)
                 continue;
 
+            if (result.AdErrors.Contains(libraryRes.ad_id))
+                continue;
+
             var startDate = libraryRes.start_date.Value.ToDateTimeSecondsUtc();
             if (startDate.GetDaysDifference() < MINIMUM_DAYS)
                 continue;
@@ -182,7 +185,6 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             
             page.Name = libraryRes.page_name;
             page.Byline = libraryRes.snapshot.byline;
-            page.PageUrl = libraryRes.snapshot.page_profile_uri;
             
             if (string.IsNullOrEmpty(page.PageProfilePictureUrl))
                 page.PageProfilePictureUrl = libraryRes.snapshot!.page_profile_picture_url;
