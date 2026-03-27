@@ -166,7 +166,10 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                 return;
 
             if (data.transparency_by_location.uk_transparency != null)
+            {
+                _result.AddAdReach(adId, data.transparency_by_location.uk_transparency.total_reach);
                 _result.AddCountryForAd(adId, "GB");
+            }
 
             if (data.transparency_by_location.br_transparency != null)
                 _result.AddCountryForAd(adId, "BR");
@@ -180,6 +183,9 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                     .Where(x => x.TotalReach > 200)
                     .Take(5)
                     .ToList();
+                
+                
+                _result.AddAdReach(adId, data.transparency_by_location.eu_transparency.eu_total_reach);
                 
                 if(!countryCandidates.Any())
                     _result.AddErrorForAd(adId);

@@ -118,7 +118,12 @@ public class TransparencyByLocationDTO
 {
     public object? br_transparency { get; set; }
     public EuTransparencyDTO? eu_transparency { get; set; }
-    public object? uk_transparency { get; set; }
+    public UkTransparencyDTO? uk_transparency { get; set; }
+}
+
+public class UkTransparencyDTO
+{
+    public int total_reach { get; set; }
 }
 
 

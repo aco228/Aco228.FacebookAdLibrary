@@ -7,6 +7,7 @@ using Aco228.FacebookAdLibrary.Models;
 using Aco228.FacebookAdLibrary.Services;
 using Aco228.GoogleServices.Extensions;
 using Aco228.MongoDb.Extensions;
+using Aco228.MongoDb.Extensions.MongoFiltersExtensions;
 using Aco228.MongoDb.Extensions.RepoExtensions;
 using Aco228.MongoDb.Models;
 using Aco228.MongoDb.Services;
@@ -19,8 +20,8 @@ namespace Aco228.FacebookAdLibrary.Tasks;
 
 public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
-    private const int MAXIMUM_PAGES_PER_TURN = 10;
-    private const int MAXIMUM_DOMAINS_PER_TURN = 10;
+    private const int MAXIMUM_PAGES_PER_TURN = 1;
+    private const int MAXIMUM_DOMAINS_PER_TURN = 1;
     private const int MINIMUM_DAYS = 10;
     
     [InjectService] public IFacebookAdExtractService FacebookAdExtractService { get; set; } 
@@ -36,8 +37,15 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         var allPages = await PageRepo.Track().Full().ToListAsync();
         var allDomains = await DomainRepo.Track().ToListAsync();
         
-        var pageCandidates = allPages.Where(x => x.IsIgnored == false && (x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5)).Shuffle().Take(MAXIMUM_PAGES_PER_TURN);
-        var domainCandidates = allDomains.Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5).Shuffle().Take(MAXIMUM_DOMAINS_PER_TURN);
+        var pageCandidates = allPages
+            .Where(x => x.IsIgnored == false && (x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5))
+            .Shuffle()
+            .Take(MAXIMUM_PAGES_PER_TURN);
+        
+        var domainCandidates = allDomains
+            .Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5)
+            .Shuffle()
+            .Take(MAXIMUM_DOMAINS_PER_TURN);
         
         var request = new ScrapeRequest()
         {
@@ -62,7 +70,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
         var result = await FacebookAdExtractService.Collect(request);
         await FacebookAdExtractService.DisposeAsync();
-        ProcessAdLibrary(result, allAds, allDomains, allPages);
+        await ProcessAdLibrary(result, allAds, allDomains, allPages);
 
         foreach (var candidate in domainCandidates)
             candidate.LastRunUtc = DT.GetUnix();
@@ -141,7 +149,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         return stateMachine;
     }
 
-    private void ProcessAdLibrary(
+    private async Task ProcessAdLibrary(
         ExtractResult result, 
         List<FbLibAdDocument> allAds,
         List<FbLibDomainDocument> allDomains, 
@@ -150,13 +158,10 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         foreach (var libraryAd in result.LibraryAds)
         foreach (var libraryRes in libraryAd.node.collated_results)
         {
-            if (libraryRes.snapshot == null)
-                continue;
+            if (libraryRes.snapshot == null) continue;
+            if (libraryRes.start_date == null) continue;
 
-            if (libraryRes.start_date == null)
-                continue;
-
-            if (result.AdErrors.Contains(libraryRes.ad_id))
+            if (result.AdErrors.Contains(libraryRes.ad_id)) 
                 continue;
 
             var startDate = libraryRes.start_date.Value.ToDateTimeSecondsUtc();
@@ -166,17 +171,27 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             var maximumDays = 4 * 31;
             if (startDate.GetDaysDifference() > maximumDays)
                 continue;
+
+            var reach = result.AdReach.TryGetValue(libraryRes.ad_archive_id, out var reachCollection) ? reachCollection :  new List<long>();
+            var totalReach = reach.Sum();
                 
             var page = allPages.FirstOrDefault(x => x.PageId.ToString() == libraryRes.page_id);
             if (page == null)
             {
-                ConsoleLog($"Found page == {libraryRes.page_name}");
-                page = new()
+                page = await PageRepo.NoTrack().Full().Eq(x => x.PageId, libraryRes.PageId).FirstOrDefaultAsync();
+                if (page == null)
                 {
-                    PageId = long.Parse(libraryRes.page_id),
-                    Name = libraryRes.page_name,
-                };
-                allPages.Add(page);
+                    ConsoleLog($"Found page == {libraryRes.page_name}");
+                    page = new()
+                    {
+                        PageId = long.Parse(libraryRes.page_id),
+                        Name = libraryRes.page_name,
+                    };
+                    allPages.Add(page);                    
+                }
+                
+                if (page.IsIgnored == true)
+                    continue;
             }
             else
             {
@@ -203,6 +218,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
             ad.Countries = countries ?? new();
             ad.LastScanUtc = DT.GetUnix();
+            ad.TotalReach = totalReach;
             ad.SearchBy = $"{snapshot.title} {snapshot.caption} {snapshot.body?.text}";
             ad.DomainUrl = snapshot.link_url?.Remove("https://").Remove("www.").Split("?").First().Split("/").First().Trim().ToLower() ?? "";
             
@@ -238,7 +254,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                         VideoUrls = string.IsNullOrEmpty(cardDto.video_sd_url) ? new() : new(){ cardDto.video_sd_url },
                     });
 
-            UpdateDomainLastRunUtc(allDomains, ad);
+            // UpdateDomainLastRunUtc(allDomains, ad);
             
             ad.StartDate = libraryRes.start_date;
             ad.EndDate = libraryRes.end_date;

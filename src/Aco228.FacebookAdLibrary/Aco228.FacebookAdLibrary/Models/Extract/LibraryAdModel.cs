@@ -115,6 +115,7 @@ public class CollatedResultDTO
     public int? collation_count { get; set; }
     public string? collation_id { get; set; }
     public string? page_id { get; set; }
+    public long PageId => long.TryParse(page_id, out var res) ? res : -1;
     public SnapshotDTO? snapshot { get; set; }
     public bool? is_active { get; set; }
     public bool? has_user_reported { get; set; }
