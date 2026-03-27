@@ -157,11 +157,11 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 continue;
 
             var startDate = libraryRes.start_date.Value.ToDateTimeSecondsUtc();
-            if(startDate.GetDaysDifference() < MINIMUM_DAYS)
+            if (startDate.GetDaysDifference() < MINIMUM_DAYS)
                 continue;
 
             var maximumDays = 4 * 31;
-            if(startDate.GetDaysDifference() < maximumDays)
+            if (startDate.GetDaysDifference() > maximumDays)
                 continue;
                 
             var page = allPages.FirstOrDefault(x => x.PageId.ToString() == libraryRes.page_id);
