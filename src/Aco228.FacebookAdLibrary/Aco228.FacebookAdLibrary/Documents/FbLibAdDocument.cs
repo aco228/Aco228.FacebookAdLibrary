@@ -24,6 +24,27 @@ public class FbLibAdDocument : MongoDocument
     public List<FbLibAdDocumentVariation> Variations { get; set; } = new();
     
     public string Raw { get; set; }
+
+    public bool AreVariationsCorrect()
+    {
+        foreach (var variation in Variations.ToList())
+        {
+            if (variation.Title?.Equals("{{product.name}}") == true
+                || variation.Body?.Equals("{{product.brand}}") == true)
+            {
+                Variations.Remove(variation);
+                continue;
+            }
+
+            if (variation.ImageUrls.Count == 0)
+            {
+                Variations.Remove(variation);
+                continue;
+            }
+        }
+
+        return Variations.Any();
+    }
     
     public DateTime? GetStartDate() => StartDate?.ToDateTimeSecondsUtc();
 }

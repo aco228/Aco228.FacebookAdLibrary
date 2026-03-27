@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using Aco228.Common.Attributes;
 using Aco228.Common.Extensions;
 using Aco228.FacebookAdLibrary.Core;
@@ -216,13 +217,10 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             var ad = allAds.FirstOrDefault(x => x.AdId == libraryRes.ad_archive_id);
             if (ad == null)
             {
-                ConsoleLog($"New.Ad == {libraryRes.ad_archive_id}");
                 ad = new() { AdId = libraryRes.ad_archive_id, PageId = page.PageId };
-                allAds.Add(ad);
             }
 
             var snapshot = libraryRes.snapshot;
-
             result.AdCountries.TryGetValue(libraryRes.ad_archive_id, out var countries);
 
             ad.Countries = countries ?? new();
@@ -249,10 +247,6 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 VideoUrls = snapshot.videos?.Select(x => x.video_sd_url).ToList() ?? new(),
             });
 
-            var texts = $"{snapshot.title} {snapshot.body?.text} {snapshot.caption}";
-            var lng = LanguageDetector!.ComputeLanguageConfidenceValues(texts);
-            ad.LanguageCode = lng.FirstOrDefault().Key.IsoCode6391().ToString().ToUpper();
-
             if (snapshot.cards?.Count > 0)
                 foreach (var cardDto in snapshot.cards)
                     ad.Variations.Add(new()
@@ -267,12 +261,28 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                         VideoUrls = string.IsNullOrEmpty(cardDto.video_sd_url) ? new() : new(){ cardDto.video_sd_url },
                     });
 
+            if (!ad.AreVariationsCorrect())
+                continue;
+
+            var txtsb = new StringBuilder();
+            foreach (var adVariation in ad.Variations)
+                txtsb.Append($"{adVariation.Title} {adVariation.Body} ");
+            
+            var lng = LanguageDetector!.ComputeLanguageConfidenceValues(txtsb.ToString());
+            ad.LanguageCode = lng.FirstOrDefault().Key.IsoCode6391().ToString().ToUpper();
+
             // UpdateDomainLastRunUtc(allDomains, ad);
             
             ad.StartDate = libraryRes.start_date;
             ad.EndDate = libraryRes.end_date;
             ad.PublishPlatforms = libraryRes.publisher_platform;
             ad.Raw = JsonSerializer.Serialize(libraryRes);
+
+            if (ad.Id == ObjectId.Empty)
+            {
+                ConsoleLog($"New.Ad == {libraryRes.ad_archive_id}");
+                allAds.Add(ad);
+            }
         }
     }
 
