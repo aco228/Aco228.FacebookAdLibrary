@@ -13,6 +13,7 @@ using Aco228.MongoDb.Models;
 using Aco228.MongoDb.Services;
 using Aco228.Runners.Core.Tasks;
 using Aco228.Runners.Models.Timings;
+using Lingua;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -20,9 +21,11 @@ namespace Aco228.FacebookAdLibrary.Tasks;
 
 public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
-    private const int MAXIMUM_PAGES_PER_TURN = 1;
-    private const int MAXIMUM_DOMAINS_PER_TURN = 1;
+    private const int MAXIMUM_PAGES_PER_TURN = 10;
+    private const int MAXIMUM_DOMAINS_PER_TURN = 10;
     private const int MINIMUM_DAYS = 10;
+    
+    public override DelayWindow Delay => new(30, DelayType.Minutes);
     
     [InjectService] public IFacebookAdExtractService FacebookAdExtractService { get; set; } 
     [InjectService] public IFacebookAdLibraryBucket FacebookAdLibraryBucket { get; set; } 
@@ -30,7 +33,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
     [InjectService] public IMongoRepo<FbLibDomainDocument> DomainRepo { get; set; }
     [InjectService] public IMongoRepo<FbLibAdDocument> AdRepo { get; set; }
 
-    public override DelayWindow Delay => new(30, DelayType.Minutes);
+    public LanguageDetector? LanguageDetector { get; set; }
 
     protected override async Task InternalExecute()
     {
@@ -70,6 +73,12 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 
         var result = await FacebookAdExtractService.Collect(request);
         await FacebookAdExtractService.DisposeAsync();
+        
+        LanguageDetector = LanguageDetectorBuilder
+            .FromAllLanguages()
+            .WithLowAccuracyMode()
+            .Build();
+        
         await ProcessAdLibrary(result, allAds, allDomains, allPages);
 
         foreach (var candidate in domainCandidates)
@@ -239,6 +248,10 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
                 VideoPreview = snapshot.videos?.Select(x => x.video_preview_image_url).ToList() ?? new(),
                 VideoUrls = snapshot.videos?.Select(x => x.video_sd_url).ToList() ?? new(),
             });
+
+            var texts = $"{snapshot.title} {snapshot.body?.text} {snapshot.caption}";
+            var lng = LanguageDetector!.ComputeLanguageConfidenceValues(texts);
+            ad.LanguageCode = lng.FirstOrDefault().Key.IsoCode6391().ToString().ToUpper();
 
             if (snapshot.cards?.Count > 0)
                 foreach (var cardDto in snapshot.cards)

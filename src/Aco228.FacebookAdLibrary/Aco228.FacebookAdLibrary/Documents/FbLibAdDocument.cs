@@ -16,6 +16,7 @@ public class FbLibAdDocument : MongoDocument
     public HashSet<string> Countries { get; set; } = new();
     public List<string> PublishPlatforms { get; set; }
     public string SearchBy { get; set; } = "";
+    public string LanguageCode { get; set; } 
     public long? StartDate { get; set; }
     public long? EndDate { get; set; }
     public string DomainUrl { get; set; }
