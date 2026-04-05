@@ -13,6 +13,7 @@ namespace Aco228.FacebookAdLibrary.Services;
 
 public interface IFacebookAdExtractService : ITransient, IAsyncDisposable
 {
+    void SetMaximumDays(int days);
     Task<ExtractResult> Collect(ScrapeRequest request);
 }
 
@@ -23,10 +24,16 @@ public class FacebookAdExtractService : IFacebookAdExtractService
     public HashSet<string> AdIds { get; set; } = new();
     private FetchModel? _fetchModelAds = null;
     private FetchModel? _fetchModelAdDetails = null;
+    private int _maximumDays = 10;
 
     public FacebookAdExtractService(IFacebookAdLibraryBrowser browser)
     {
         _browser = browser;
+    }
+
+    public void SetMaximumDays(int days)
+    {
+        _maximumDays = days;
     }
 
     public async Task<ExtractResult> Collect(ScrapeRequest request)
@@ -265,7 +272,10 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                     continue;
                 
                 var startDate = collatedResult.start_date.Value.ToDateTimeSecondsUtc();
-                if(startDate.GetDaysDifference() < 10)
+                if(startDate.GetDaysDifference() < _maximumDays)
+                    continue;
+
+                if (collatedResult.end_date != null)
                     continue;
                 
                 id = collatedResult.ad_archive_id;

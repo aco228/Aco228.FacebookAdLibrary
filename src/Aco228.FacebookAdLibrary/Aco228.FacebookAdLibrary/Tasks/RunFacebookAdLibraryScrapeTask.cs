@@ -24,7 +24,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
 {
     private const int MAXIMUM_PAGES_PER_TURN = 10;
     private const int MAXIMUM_DOMAINS_PER_TURN = 10;
-    private const int MINIMUM_DAYS = 10;
+    private const int MINIMUM_DAYS = 7;
     
     public override DelayWindow Delay => new(30, DelayType.Minutes);
     
@@ -72,6 +72,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         if(!request.Any())
             return;
 
+        FacebookAdExtractService.SetMaximumDays(MINIMUM_DAYS);
         var result = await FacebookAdExtractService.Collect(request);
         await FacebookAdExtractService.DisposeAsync();
         
