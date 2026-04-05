@@ -275,7 +275,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
                 if(startDate.GetDaysDifference() < _maximumDays)
                     continue;
 
-                if (collatedResult.end_date != null)
+                if (collatedResult.is_active == false)
                     continue;
                 
                 id = collatedResult.ad_archive_id;
