@@ -20,7 +20,7 @@ public class CreateSuggestionsPrompt : PromptBase<CreateSuggestionsPromptRequest
     {
         return systemPrompt
             .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries == null || !request.IgnoreCountries.Any() ? "" : "- Do not use these countries in the response: " + string.Join(", ", request.IgnoreCountries)))
-            .Replace("{COUNTRIES_WHITELIST}", (request.OnlyCountries == null || !request.OnlyCountries.Any() ? "" : "- Use only these countries in the response: " + string.Join(", ", request.IgnoreCountries)))
+            .Replace("{COUNTRIES_WHITELIST}", (request.OnlyCountries == null || !request.OnlyCountries.Any() ? "" : "- Use only these countries in the response: " + string.Join(", ", request.OnlyCountries)))
             .Replace("{{SPY_ADS}}", ToonEncoder.Encode(request.Entries));
     }
 }
