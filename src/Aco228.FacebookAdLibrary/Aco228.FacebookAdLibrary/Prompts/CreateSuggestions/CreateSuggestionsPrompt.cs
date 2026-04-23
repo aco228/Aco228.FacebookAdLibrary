@@ -19,7 +19,7 @@ public class CreateSuggestionsPrompt : PromptBase<CreateSuggestionsPromptRequest
     protected override async Task<string> ModifySystemPrompt(string systemPrompt, CreateSuggestionsPromptRequest request)
     {
         return systemPrompt
-            .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries?.Any() == false ? "" : "- Do not use these countries in the response: {COUNTRIES_BLACKLIST}" + string.Join(", ", request.IgnoreCountries)))
+            .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries == null || !request.IgnoreCountries.Any() ? "" : "- Do not use these countries in the response: {COUNTRIES_BLACKLIST}" + string.Join(", ", request.IgnoreCountries)))
             .Replace("{{SPY_ADS}}", ToonEncoder.Encode(request.Entries));
     }
 }
