@@ -19,7 +19,8 @@ public class CreateSuggestionsPrompt : PromptBase<CreateSuggestionsPromptRequest
     protected override async Task<string> ModifySystemPrompt(string systemPrompt, CreateSuggestionsPromptRequest request)
     {
         return systemPrompt
-            .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries == null || !request.IgnoreCountries.Any() ? "" : "- Do not use these countries in the response: {COUNTRIES_BLACKLIST}" + string.Join(", ", request.IgnoreCountries)))
+            .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries == null || !request.IgnoreCountries.Any() ? "" : "- Do not use these countries in the response: " + string.Join(", ", request.IgnoreCountries)))
+            .Replace("{COUNTRIES_WHITELIST}", (request.OnlyCountries == null || !request.OnlyCountries.Any() ? "" : "- Use only these countries in the response: " + string.Join(", ", request.IgnoreCountries)))
             .Replace("{{SPY_ADS}}", ToonEncoder.Encode(request.Entries));
     }
 }
@@ -45,6 +46,9 @@ public class CreateSuggestionsPromptRequest
     
     [PromptHint("Ignore these countries in response")]
     public required List<string>? IgnoreCountries { get; set; } = null;
+    
+    [PromptHint("Use only there countries in response")]
+    public required List<string>? OnlyCountries { get; set; } = null;
     
     [PromptHint("A list of vertical names I currently support")]
     public required List<CreateSuggestionsPromptRequestVertical> SupportedVerticals { get; set; }

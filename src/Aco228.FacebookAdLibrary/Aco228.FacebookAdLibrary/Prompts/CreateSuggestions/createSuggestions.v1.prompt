@@ -4,6 +4,7 @@ image title suggestions matched to the verticals I provide.
 
 ## Inputs
 {COUNTRIES_BLACKLIST}
+{COUNTRIES_WHITELIST}
 
 ### Spy ads (in this system prompt)
 Each ad contains: Title, Body, Language.
