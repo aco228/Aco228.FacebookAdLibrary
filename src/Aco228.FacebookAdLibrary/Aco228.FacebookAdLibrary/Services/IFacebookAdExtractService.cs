@@ -69,7 +69,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         
         await Task.Delay(TimeSpan.FromSeconds(5));
         
-        for (;;)
+        for(int i = 0; i < 25; i++)
         {
             if (_fetchModelAds != null)
                 break;
@@ -81,12 +81,15 @@ public class FacebookAdExtractService : IFacebookAdExtractService
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
+        if (_fetchModelAds == null)
+            return _result;
+
         var elements = _browser.Page.GetByText("See ad details");
         var element = elements.Nth(1);
         await element.WaitForAsync();
         await element.ClickAsync();
         
-        for (;;)
+        for(int i = 0; i < 25; i++)
         {
             if (_fetchModelAdDetails != null)
                 break;
@@ -97,8 +100,8 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         var variables = _fetchModelAds.GetPostData()["variables"];
         var model = JsonConvert.DeserializeObject<FacebookSearchVariable>(WebUtility.UrlDecode(variables));
         
-        var adDetailVariable = _fetchModelAdDetails.GetPostData()["variables"];
-        var adDetailsModel = JsonConvert.DeserializeObject<FacebookAdDetailVariable>(WebUtility.UrlDecode(adDetailVariable));
+        var adDetailVariable = _fetchModelAdDetails?.GetPostData()["variables"] ?? null;
+        var adDetailsModel = string.IsNullOrEmpty(adDetailVariable) ? null : JsonConvert.DeserializeObject<FacebookAdDetailVariable>(WebUtility.UrlDecode(adDetailVariable));
 
         Console.WriteLine($"<<<< Searching for pages");
         foreach (var requestPageId in request.PageIds)
@@ -149,8 +152,11 @@ public class FacebookAdExtractService : IFacebookAdExtractService
         return _result;
     }
 
-    private async Task ProcessAdDetail(string adId, FacebookAdDetailVariable variable)
+    private async Task ProcessAdDetail(string adId, FacebookAdDetailVariable? variable)
     {
+        if(variable == null)
+            return;
+        
         if(!_result.AdPageMap.TryGetValue(adId, out var pageId))
             return;
         
