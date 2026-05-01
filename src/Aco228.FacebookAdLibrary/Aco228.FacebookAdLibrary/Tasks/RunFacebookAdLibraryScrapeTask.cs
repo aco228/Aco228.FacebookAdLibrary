@@ -42,12 +42,12 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
         var allDomains = await DomainRepo.Track().ToListAsync();
         
         var pageCandidates = allPages
-            .Where(x => x.IsIgnored == false && (x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5))
+            .Where(x => x.IsIgnored == false && (x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1))
             .Shuffle()
             .Take(MAXIMUM_PAGES_PER_TURN);
         
         var domainCandidates = allDomains
-            .Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1.5)
+            .Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1)
             .Shuffle()
             .Take(MAXIMUM_DOMAINS_PER_TURN);
         
