@@ -72,7 +72,16 @@ public class CreateSuggestionsPromptResponse
     public List<CreateSuggestionsPromptResponseSuggestion> AdSuggestions { get; set; }
     
     [PromptHint("Vertical suggestions that are not listed")]
-    public List<string> VerticalSuggestions { get; set; }
+    public List<CreateSuggestionsPromptVerticalResponseSuggestion> VerticalSuggestions { get; set; }
+}
+
+public class CreateSuggestionsPromptVerticalResponseSuggestion
+{
+    [PromptHint("Vertical name")]
+    public string VerticalName { get; set; }
+    
+    [PromptHint("Ad suggestion")]
+    public List<CreateSuggestionsPromptResponseSuggestion> AdSuggestions { get; set; }
 }
 
 public class CreateSuggestionsPromptResponseSuggestion
