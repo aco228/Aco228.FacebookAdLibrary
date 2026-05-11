@@ -48,6 +48,7 @@ vertical whose Intent best matches that action.
 
 Rules:
 - One spy ad → one vertical only. No shared assignments.
+- Math every suggestion with given vertical name
 - Match on intended reader action, not on shared vocabulary or emotional
   angle. Two ads can use urgency, numbers, and locations — that does not
   make them the same vertical.

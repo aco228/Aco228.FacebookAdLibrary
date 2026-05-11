@@ -79,9 +79,6 @@ public class CreateSuggestionsPromptVerticalResponseSuggestion
 {
     [PromptHint("Vertical name")]
     public string VerticalName { get; set; }
-    
-    [PromptHint("Ad suggestion")]
-    public List<CreateSuggestionsPromptResponseSuggestion> AdSuggestions { get; set; }
 }
 
 public class CreateSuggestionsPromptResponseSuggestion
