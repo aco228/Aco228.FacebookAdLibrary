@@ -47,7 +47,7 @@ public class RunFacebookAdLibraryScrapeTask : TaskBase
             .Take(MAXIMUM_PAGES_PER_TURN);
         
         var domainCandidates = allDomains
-            .Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 1)
+            .Where(x => x.LastRunUtc == null || x.LastRunUtc.Value.ToDateTimeUtc().GetDaysDifferenceUtc() > 3)
             .Shuffle()
             .Take(MAXIMUM_DOMAINS_PER_TURN);
         
