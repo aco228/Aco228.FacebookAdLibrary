@@ -68,6 +68,16 @@ Rules:
 - Use the same language as the source spy ad
 - If no spy ad matches a vertical, invent a title in the style of
   TitleExamples — do not fall back to generic descriptions
+  
+- Is inspired by or adapted from any ad that promotes a named retail
+  marketplace or shopping platform (e.g. Walmart, Amazon, Target, eBay,
+  Etsy, AliExpress, Temu, Shein, Costco, or any equivalent regional
+  marketplace). If the source spy ad's primary purpose is to drive traffic
+  to a retail marketplace — regardless of what product it advertises —
+  discard it entirely in Step 2 and do not use it as inspiration for any
+  title. A spy ad qualifies for rejection if it names the marketplace in
+  the Title, Body, or implies it is the destination (e.g. "Shop now on
+  [Platform]", "Available at [Platform]", "[Platform] deals").
 
 ### Step 5 — self-filter before output
 For each title, ask:
