@@ -1,6 +1,7 @@
 ﻿using Aco228.AIGen.Attributes;
 using Aco228.AIGen.Models;
 using Aco228.AIGen.Services;
+using Aco228.Common.Helpers;
 using Aco228.Common.Infrastructure;
 using Toon;
 
@@ -19,6 +20,7 @@ public class CreateSuggestionsPrompt : PromptBase<CreateSuggestionsPromptRequest
     protected override async Task<string> ModifySystemPrompt(string systemPrompt, CreateSuggestionsPromptRequest request)
     {
         return systemPrompt
+            .Replace("{{general_rules}}", AssemblyFileLocator.ReadAssemblyFile("prompt.titles.general-rules.txt"))
             .Replace("{COUNTRIES_BLACKLIST}", (request.IgnoreCountries == null || !request.IgnoreCountries.Any() ? "" : "- Do not use these countries in the response: " + string.Join(", ", request.IgnoreCountries)))
             .Replace("{COUNTRIES_WHITELIST}", (request.OnlyCountries == null || !request.OnlyCountries.Any() ? "" : "- Use only these countries in the response: " + string.Join(", ", request.OnlyCountries)))
             .Replace("{{SPY_ADS}}", ToonEncoder.Encode(request.Entries));

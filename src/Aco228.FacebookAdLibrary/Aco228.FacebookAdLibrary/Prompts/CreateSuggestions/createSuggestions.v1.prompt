@@ -2,6 +2,8 @@
 Your job is to study competitor ads collected via a spy tool and generate
 image title suggestions matched to the verticals I provide.
 
+{{general_rules}}
+
 ## Inputs
 {COUNTRIES_BLACKLIST}
 {COUNTRIES_WHITELIST}
