@@ -2,6 +2,7 @@
 using Aco228.Common.Models;
 using Microsoft.Playwright;
 using Soenneker.Playwrights.Extensions.Stealth;
+using Soenneker.Playwrights.Extensions.Stealth.Options;
 
 namespace Aco228.FacebookAdLibrary.Browser;
 
@@ -14,59 +15,63 @@ public interface IFacebookAdLibraryBrowser : ITransient, IAsyncDisposable
 public class FacebookAdLibraryBrowser : IFacebookAdLibraryBrowser
 {
     private IPlaywright _playwright;
+    private IBrowserContext _context;   // no IBrowser in persistent mode — the profile IS the context
     public IPage Page { get; private set; }
-    private IBrowserContext? _context;
-    
+
+    private static int _installed;      // install once per process
+
     public async Task Launch(string? userDataDir = null, bool openAsHeadless = false)
     {
         if (string.IsNullOrEmpty(userDataDir))
-            userDataDir = StorageManager.Instance.GetFolder("FbAdLibrary").GetFolder("user-dir").GetDirectoryInfo().FullName;
-        
-        int num = Program.Main(new string[3]
+            userDataDir = StorageManager.Instance.GetFolder("FbAdLibrary")
+                .GetFolder("user-dir").GetDirectoryInfo().FullName;
+
+        if (Interlocked.Exchange(ref _installed, 1) == 0)
         {
-            "install",
-            "--with-deps",
-            "Chromium".ToLowerInvariant()
-        });
-        
-        if (num != 0)
-            throw new Exception($"Playwright exited with code {num}");
-        
+            int num = Program.Main(new[] { "install", "--with-deps", "chromium" });
+            if (num != 0) throw new Exception($"Playwright install exited with code {num}");
+        }
+
         _playwright = await Playwright.CreateAsync();
 
-        _context = await _playwright.Chromium.LaunchPersistentContextAsync(userDataDir, options: new()
+        //1) reuse the library's launch-arg hardening
+        var stealthLaunch = new StealthLaunchOptions
         {
-            BypassCSP = true,
-            IgnoreHTTPSErrors = true,
-            UserAgent = $"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-            
-            Headless = openAsHeadless,
-            Args = new []
-            { 
-                // "--auto-open-devtools-for-tabs",
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-web-security",
-                "--disable-features=IsolateOrigins,site-per-process",
-                // "--incognito",
-                "--disable-infobars",
-                "--disable-site-isolation-trials",
+            Channel = "chromium",  // or "chrome" for a real-Chrome fingerprint
+            // IncludeNoSandboxArgument / IgnoreDetectableDefaultArguments default to true
+        };
+        
+        string[] hardenedArgs = StealthLaunchArgumentNormalizer.Normalize(
+            existingArguments: new[]
+            {
+                // your own extras go here; they get merged + normalized
                 "--ignore-certificate-errors",
             },
+            isHeadlessLaunch: openAsHeadless,
+            options: stealthLaunch);
+        
+        // 2) launch the PERSISTENT context yourself (this is what gives you user-data-dir)
+        _context = await _playwright.Chromium.LaunchPersistentContextAsync(userDataDir, new()
+        {
+            Headless = openAsHeadless,
+            Channel = stealthLaunch.Channel,
+            Args = hardenedArgs,
+            // mirror what LaunchStealthChromium sets internally:
+            IgnoreDefaultArgs = StealthLaunchArgumentNormalizer.DetectableDefaultArgumentsToIgnore,
+        });
+        
+        // 3) apply the library's context-level stealth (headers, CDP hardening, init script)
+        await _context.ApplyStealth(new StealthContextOptions
+        {
+            // e.g. NormalizeDocumentHeaders = true, InjectClientHintHeaders = true, EnableCdpDomainHardening = true
         });
 
-        var pages = _context.Pages;
-        if(pages.Any())
-            Page = pages.First();
-        else
-            Page = await _context.NewPageAsync();
+        Page = _context.Pages.Count > 0 ? _context.Pages[0] : await _context.NewPageAsync();
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_playwright is IAsyncDisposable playwrightAsyncDisposable)
-            await playwrightAsyncDisposable.DisposeAsync();
-        else
-            _playwright.Dispose();
+        if (_context != null) await _context.DisposeAsync();
+        _playwright?.Dispose();
     }
 }
