@@ -48,7 +48,7 @@ public class FacebookAdLibraryBrowser : IFacebookAdLibraryBrowser
                 "--disable-setuid-sandbox",
                 "--disable-web-security",
                 "--disable-features=IsolateOrigins,site-per-process",
-                "--incognito",
+                // "--incognito",
                 "--disable-infobars",
                 "--disable-site-isolation-trials",
                 "--ignore-certificate-errors",
