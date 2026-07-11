@@ -11,6 +11,5 @@ public interface IFacebookAdLibraryDbContext : IMongoDbContext, ISingleton
 public class FacebookAdLibraryDbContext : MongoDbContext, IFacebookAdLibraryDbContext
 {
     public override string DatabaseName => "FacebookAdLibrary";
-    protected override string GetConnectionString()
-        => GetConnectionStringFromEnv("MONGO_CONNECTION_STRING");
+    protected override string GetConnectionString() => GetConnectionStringFromEnv();
 }
