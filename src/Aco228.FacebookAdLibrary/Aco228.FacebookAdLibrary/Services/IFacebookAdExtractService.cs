@@ -59,7 +59,7 @@ public class FacebookAdExtractService : IFacebookAdExtractService
 
     public async Task<ExtractResult> Execute(ScrapeRequest request)
     {
-        const string pageId = "117333061268253";
+        const string pageId = "804931969362249";
         string url = $"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&is_targeted_country=false&media_type=all&search_type=page&sort_data[mode]=total_impressions&sort_data[direction]=desc&view_all_page_id=" + pageId;
         _browser.Page.RouteAsync("**/*", ImplOnRequest).ConfigureAwait(true);
         await _browser.Page.GotoAsync(url, new()
