@@ -15,6 +15,7 @@ public class CreateSuggestionsPrompt : PromptBase<CreateSuggestionsPromptRequest
     {
         TextGenProvider.Claude,
         TextGenProvider.Gemini,
+        TextGenProvider.ChatGPT,
     };
 
     protected override async Task<string> ModifySystemPrompt(string systemPrompt, CreateSuggestionsPromptRequest request)
